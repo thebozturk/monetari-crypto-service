@@ -20,7 +20,7 @@ export class PriceResponseDto {
   @ApiPropertyOptional({ example: 2.45 })
   change24h!: number | null;
 
-  @ApiProperty({ example: '2024-01-01T12:00:00.000Z' })
+  @ApiProperty({ example: '2026-02-25T12:00:00.000Z' })
   queriedAt!: Date;
 
   static fromEntity(entity: PriceRecord): PriceResponseDto {

@@ -5,7 +5,7 @@ import { IsDate, IsInt, IsOptional, Max, Min } from 'class-validator';
 export class PriceHistoryQueryDto {
   @ApiPropertyOptional({
     description: 'Start date (ISO 8601)',
-    example: '2024-01-01T00:00:00.000Z',
+    example: '2026-01-01T00:00:00.000Z',
   })
   @IsOptional()
   @IsDate()
@@ -14,7 +14,7 @@ export class PriceHistoryQueryDto {
 
   @ApiPropertyOptional({
     description: 'End date (ISO 8601)',
-    example: '2024-12-31T23:59:59.999Z',
+    example: '2026-12-31T23:59:59.999Z',
   })
   @IsOptional()
   @IsDate()

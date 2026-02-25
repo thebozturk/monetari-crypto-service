@@ -99,7 +99,7 @@ Responses within the 5-second cache window are served instantly without any exte
 ## Testing
 
 ```bash
-npm run test          # Unit tests (10 specs)
+npm run test          # Unit tests (9 specs)
 npm run test:e2e      # E2E tests (6 specs, requires PostgreSQL)
 npm run test:cov      # Coverage report
 ```
