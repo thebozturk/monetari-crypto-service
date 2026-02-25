@@ -10,10 +10,18 @@ interface BatchEntry {
   timer: NodeJS.Timeout;
 }
 
+interface CacheEntry {
+  data: CoinGeckoPrice;
+  cachedAt: number;
+}
+
+const CACHE_TTL_MS = 30000;
+
 @Injectable()
 export class PriceBatcherService implements OnModuleDestroy {
   private readonly logger = new Logger(PriceBatcherService.name);
   private readonly batches = new Map<string, BatchEntry>();
+  private readonly cache = new Map<string, CacheEntry>();
   private readonly waitTimeMs: number;
   private readonly threshold: number;
 
@@ -27,6 +35,12 @@ export class PriceBatcherService implements OnModuleDestroy {
 
   getPrice(coinId: string): Promise<CoinGeckoPrice> {
     const normalizedId = coinId.toLowerCase().trim();
+
+    const cached = this.cache.get(normalizedId);
+    if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+      this.logger.log(`Cache hit for ${normalizedId}`);
+      return Promise.resolve(cached.data);
+    }
 
     return new Promise<CoinGeckoPrice>((resolve, reject) => {
       const existing = this.batches.get(normalizedId);
@@ -67,6 +81,7 @@ export class PriceBatcherService implements OnModuleDestroy {
     this.coinGeckoService
       .getSimplePrice(coinId)
       .then((price) => {
+        this.cache.set(coinId, { data: price, cachedAt: Date.now() });
         this.logger.log(
           `Batch flushed for ${coinId}, served ${resolvers.length} requests`,
         );
@@ -87,5 +102,6 @@ export class PriceBatcherService implements OnModuleDestroy {
       this.logger.warn(`Rejected pending batch for ${coinId} on shutdown`);
     }
     this.batches.clear();
+    this.cache.clear();
   }
 }
