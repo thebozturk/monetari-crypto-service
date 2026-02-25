@@ -2,9 +2,14 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CoinGeckoPrice, CoinGeckoService } from './coingecko.service';
 
+export interface BatchedPriceResult {
+  data: CoinGeckoPrice;
+  fromCache: boolean;
+}
+
 interface BatchEntry {
   resolvers: Array<{
-    resolve: (value: CoinGeckoPrice) => void;
+    resolve: (value: BatchedPriceResult) => void;
     reject: (reason: unknown) => void;
   }>;
   timer: NodeJS.Timeout;
@@ -15,8 +20,6 @@ interface CacheEntry {
   cachedAt: number;
 }
 
-const CACHE_TTL_MS = 5000;
-
 @Injectable()
 export class PriceBatcherService implements OnModuleDestroy {
   private readonly logger = new Logger(PriceBatcherService.name);
@@ -24,6 +27,7 @@ export class PriceBatcherService implements OnModuleDestroy {
   private readonly cache = new Map<string, CacheEntry>();
   private readonly waitTimeMs: number;
   private readonly threshold: number;
+  private readonly cacheTtlMs: number;
 
   constructor(
     private readonly coinGeckoService: CoinGeckoService,
@@ -31,18 +35,19 @@ export class PriceBatcherService implements OnModuleDestroy {
   ) {
     this.waitTimeMs = this.configService.get<number>('batch.waitTimeMs', 5000);
     this.threshold = this.configService.get<number>('batch.threshold', 3);
+    this.cacheTtlMs = this.configService.get<number>('batch.cacheTtlMs', 5000);
   }
 
-  getPrice(coinId: string): Promise<CoinGeckoPrice> {
+  getPrice(coinId: string): Promise<BatchedPriceResult> {
     const normalizedId = coinId.toLowerCase().trim();
 
     const cached = this.cache.get(normalizedId);
-    if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.cachedAt < this.cacheTtlMs) {
       this.logger.log(`Cache hit for ${normalizedId}`);
-      return Promise.resolve(cached.data);
+      return Promise.resolve({ data: cached.data, fromCache: true });
     }
 
-    return new Promise<CoinGeckoPrice>((resolve, reject) => {
+    return new Promise<BatchedPriceResult>((resolve, reject) => {
       const existing = this.batches.get(normalizedId);
 
       if (existing) {

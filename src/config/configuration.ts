@@ -18,5 +18,10 @@ export default () => ({
   batch: {
     waitTimeMs: parseInt(process.env.BATCH_WAIT_TIME_MS || '5000', 10),
     threshold: parseInt(process.env.BATCH_THRESHOLD || '3', 10),
+    cacheTtlMs: parseInt(process.env.CACHE_TTL_MS || '5000', 10),
+  },
+  seed: {
+    username: process.env.SEED_USERNAME || 'monetari',
+    password: process.env.SEED_PASSWORD || 'monetari123',
   },
 });

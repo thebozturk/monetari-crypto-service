@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -11,21 +12,25 @@ export class AuthSeedService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
   ) {}
 
   async onModuleInit() {
+    const username = this.configService.get<string>('seed.username')!;
+    const password = this.configService.get<string>('seed.password')!;
+
     const existing = await this.userRepository.findOne({
-      where: { username: 'monetari' },
+      where: { username },
     });
 
     if (!existing) {
-      const hashedPassword = await bcrypt.hash('monetari123', 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
       const user = this.userRepository.create({
-        username: 'monetari',
+        username,
         password: hashedPassword,
       });
       await this.userRepository.save(user);
-      this.logger.log('Seed user "monetari" created');
+      this.logger.log(`Seed user "${username}" created`);
     }
   }
 }
