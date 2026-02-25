@@ -25,6 +25,7 @@ export class PriceBatcherService implements OnModuleDestroy {
   private readonly logger = new Logger(PriceBatcherService.name);
   private readonly batches = new Map<string, BatchEntry>();
   private readonly cache = new Map<string, CacheEntry>();
+  private readonly inflight = new Map<string, Promise<CoinGeckoPrice>>();
   private readonly waitTimeMs: number;
   private readonly threshold: number;
   private readonly cacheTtlMs: number;
@@ -38,15 +39,25 @@ export class PriceBatcherService implements OnModuleDestroy {
     this.cacheTtlMs = this.configService.get<number>('batch.cacheTtlMs', 5000);
   }
 
-  getPrice(coinId: string): Promise<BatchedPriceResult> {
+  async getPrice(coinId: string): Promise<BatchedPriceResult> {
     const normalizedId = coinId.toLowerCase().trim();
 
+    // 1) Cache hit
     const cached = this.cache.get(normalizedId);
     if (cached && Date.now() - cached.cachedAt < this.cacheTtlMs) {
       this.logger.log(`Cache hit for ${normalizedId}`);
-      return Promise.resolve({ data: cached.data, fromCache: true });
+      return { data: cached.data, fromCache: true };
     }
 
+    // 2) Inflight — API call devam ediyorsa bekle, yeni call açma
+    const pending = this.inflight.get(normalizedId);
+    if (pending) {
+      this.logger.log(`Inflight hit for ${normalizedId}`);
+      const data = await pending;
+      return { data, fromCache: true };
+    }
+
+    // 3) Batch'e ekle
     return new Promise<BatchedPriceResult>((resolve, reject) => {
       const existing = this.batches.get(normalizedId);
 
@@ -83,8 +94,12 @@ export class PriceBatcherService implements OnModuleDestroy {
     this.batches.delete(coinId);
     clearTimeout(timer);
 
-    this.coinGeckoService
-      .getSimplePrice(coinId)
+    const apiCall = this.coinGeckoService.getSimplePrice(coinId);
+
+    // Store raw promise so inflight waiters can await the same API call
+    this.inflight.set(coinId, apiCall);
+
+    apiCall
       .then((price) => {
         this.cache.set(coinId, { data: price, cachedAt: Date.now() });
         this.logger.log(
@@ -95,6 +110,9 @@ export class PriceBatcherService implements OnModuleDestroy {
       .catch((error) => {
         this.logger.error(`Batch failed for ${coinId}: ${error}`);
         resolvers.forEach((r) => r.reject(error));
+      })
+      .finally(() => {
+        this.inflight.delete(coinId);
       });
   }
 
@@ -108,5 +126,6 @@ export class PriceBatcherService implements OnModuleDestroy {
     }
     this.batches.clear();
     this.cache.clear();
+    this.inflight.clear();
   }
 }

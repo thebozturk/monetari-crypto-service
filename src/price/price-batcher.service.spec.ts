@@ -162,6 +162,36 @@ describe('PriceBatcherService', () => {
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(2);
   });
 
+  it('should use inflight promise instead of new API call (race condition)', async () => {
+    // simulate slow API — resolve is held until we release it
+    let resolveApi!: (value: CoinGeckoPrice) => void;
+    coinGeckoService.getSimplePrice.mockImplementation(
+      () => new Promise((res) => (resolveApi = res)),
+    );
+
+    // 1st request → starts batch
+    const p1 = service.getPrice('bitcoin');
+
+    // flush triggers after timeout
+    jest.advanceTimersByTime(5000);
+
+    // api call is now inflight (not resolved yet)
+    // 2nd request arrives while API is still pending
+    const p2 = service.getPrice('bitcoin');
+
+    // resolve the API
+    resolveApi(mockPrice);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const [r1, r2] = await Promise.all([p1, p2]);
+
+    expect(r1).toEqual({ data: mockPrice, fromCache: false });
+    expect(r2).toEqual({ data: mockPrice, fromCache: true });
+    // only 1 API call was made despite 2 separate request windows
+    expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
+  });
+
   it('should return cached result within TTL', async () => {
     // first request triggers API call
     const p1 = service.getPrice('bitcoin');
