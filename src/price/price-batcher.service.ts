@@ -15,7 +15,7 @@ interface CacheEntry {
   cachedAt: number;
 }
 
-const CACHE_TTL_MS = 30000;
+const CACHE_TTL_MS = 5000;
 
 @Injectable()
 export class PriceBatcherService implements OnModuleDestroy {

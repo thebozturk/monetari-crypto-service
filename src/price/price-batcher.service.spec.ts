@@ -147,8 +147,8 @@ describe('PriceBatcherService', () => {
 
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
 
-    // advance past cache TTL (30s) so next request is not served from cache
-    jest.advanceTimersByTime(30001);
+    // advance past cache TTL (5s) so next request is not served from cache
+    jest.advanceTimersByTime(5001);
 
     // fourth request should start a new batch (cache expired)
     const p4 = service.getPrice('bitcoin');
@@ -171,7 +171,7 @@ describe('PriceBatcherService', () => {
 
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
 
-    // second request within 30s should hit cache (no new API call)
+    // second request within 5s should hit cache (no new API call)
     const result = await service.getPrice('bitcoin');
 
     expect(result).toEqual(mockPrice);

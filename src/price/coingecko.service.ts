@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError } from 'axios';
 
@@ -36,6 +41,7 @@ export class CoinGeckoService {
             include_market_cap: true,
             include_24hr_change: true,
           },
+          timeout: 10000,
           headers: this.apiKey
             ? { 'x-cg-demo-api-key': this.apiKey }
             : undefined,
@@ -45,15 +51,21 @@ export class CoinGeckoService {
       const data = response.data[coinId];
 
       if (!data) {
-        throw new Error(`No price data found for coin: ${coinId}`);
+        throw new NotFoundException(`Coin not found: ${coinId}`);
       }
 
       return data;
     } catch (error) {
       if (error instanceof AxiosError) {
+        if (error.code === 'ECONNABORTED') {
+          this.logger.warn(`CoinGecko request timed out for ${coinId}`);
+          throw new ServiceUnavailableException(
+            'CoinGecko request timed out. Please try again later.',
+          );
+        }
         if (error.response?.status === 429) {
           this.logger.warn('CoinGecko rate limit reached (429)');
-          throw new Error(
+          throw new ServiceUnavailableException(
             'CoinGecko rate limit exceeded. Please try again later.',
           );
         }

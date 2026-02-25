@@ -5,7 +5,7 @@ A high-performance cryptocurrency price query service built with NestJS. Fetches
 ## Key Features
 
 - **Request Batching** — Concurrent price queries are grouped and served with a single API call
-- **In-Memory Cache** — 30-second TTL cache prevents redundant external API calls
+- **In-Memory Cache** — 5-second TTL cache prevents redundant external API calls
 - **JWT Authentication** — Signup/login flow with bcrypt password hashing
 - **Input Validation** — Coin ID format validation via custom pipe
 - **Rate Limiting** — 30 requests/minute per client via `@nestjs/throttler`
@@ -77,7 +77,7 @@ Request 3 (bitcoin) ──┘
 
 Both the timeout and threshold are configurable via environment variables.
 
-Responses within the 30-second cache window are served instantly without any external API call.
+Responses within the 5-second cache window are served instantly without any external API call.
 
 ## Environment Variables
 
