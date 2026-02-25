@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: monetari
+      POSTGRES_PASSWORD: monetari_secret
+      POSTGRES_DB: monetari_crypto
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U monetari -d monetari_crypto']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: monetari
+      DB_PASSWORD: monetari_secret
+      DB_DATABASE: monetari_crypto
+      JWT_SECRET: monetari-docker-jwt-secret-key
+      JWT_EXPIRES_IN: 1h
+      COINGECKO_API_URL: https://api.coingecko.com/api/v3
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+      BATCH_WAIT_TIME_MS: 5000
+      BATCH_THRESHOLD: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
