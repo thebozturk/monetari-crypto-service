@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: monetari
-      POSTGRES_PASSWORD: monetari_secret
-      POSTGRES_DB: monetari_crypto
+      POSTGRES_USER: ${DB_USERNAME:-monetari}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-monetari_secret}
+      POSTGRES_DB: ${DB_DATABASE:-monetari_crypto}
     ports:
       - '5433:5432'
     volumes:
@@ -19,21 +19,11 @@ services:
     build: .
     ports:
       - '3000:3000'
+    env_file:
+      - .env
     environment:
-      PORT: 3000
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USERNAME: monetari
-      DB_PASSWORD: monetari_secret
-      DB_DATABASE: monetari_crypto
-      JWT_SECRET: monetari-docker-jwt-secret-key
-      JWT_EXPIRES_IN: 1h
-      COINGECKO_API_URL: https://api.coingecko.com/api/v3
-      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
-      BATCH_WAIT_TIME_MS: 5000
-      BATCH_THRESHOLD: 3
-      SEED_USERNAME: monetari
-      SEED_PASSWORD: monetari123
     depends_on:
       postgres:
         condition: service_healthy

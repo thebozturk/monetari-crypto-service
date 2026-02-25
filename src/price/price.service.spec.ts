@@ -49,7 +49,9 @@ describe('PriceService', () => {
         {
           provide: PriceBatcherService,
           useValue: {
-            getPrice: jest.fn().mockResolvedValue(mockPrice),
+            getPrice: jest
+              .fn()
+              .mockResolvedValue({ data: mockPrice, fromCache: false }),
           },
         },
         {
@@ -64,7 +66,7 @@ describe('PriceService', () => {
   });
 
   describe('getCurrentPrice', () => {
-    it('should call batcher and save result to DB', async () => {
+    it('should call batcher and save result to DB when not cached', async () => {
       const result = await service.getCurrentPrice('Bitcoin');
 
       expect(batcherService.getPrice).toHaveBeenCalledWith('bitcoin');
@@ -89,6 +91,27 @@ describe('PriceService', () => {
       );
       expect(result).not.toHaveProperty('id');
       expect(result).not.toHaveProperty('createdAt');
+    });
+
+    it('should skip DB save when result is from cache', async () => {
+      (batcherService.getPrice as jest.Mock).mockResolvedValue({
+        data: mockPrice,
+        fromCache: true,
+      });
+
+      const result = await service.getCurrentPrice('Bitcoin');
+
+      expect(batcherService.getPrice).toHaveBeenCalledWith('bitcoin');
+      expect(mockRepository.create).not.toHaveBeenCalled();
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(result).toEqual(
+        expect.objectContaining({
+          coinId: 'bitcoin',
+          priceUsd: 97000,
+          priceEur: 89000,
+          priceTry: 3200000,
+        }),
+      );
     });
   });
 

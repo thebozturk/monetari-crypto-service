@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PriceRecord } from '../entities/price-record.entity';
+import { CoinGeckoPrice } from '../coingecko.service';
 
 export class PriceResponseDto {
   @ApiProperty({ example: 'bitcoin' })
@@ -34,6 +35,21 @@ export class PriceResponseDto {
     dto.change24h =
       entity.change24h != null ? toNumber(entity.change24h) : null;
     dto.queriedAt = entity.queriedAt;
+    return dto;
+  }
+
+  static fromCoinGecko(
+    coinId: string,
+    price: CoinGeckoPrice,
+  ): PriceResponseDto {
+    const dto = new PriceResponseDto();
+    dto.coinId = coinId;
+    dto.priceUsd = price.usd;
+    dto.priceEur = price.eur ?? null;
+    dto.priceTry = price.try ?? null;
+    dto.marketCap = price.usd_market_cap ?? null;
+    dto.change24h = price.usd_24h_change ?? null;
+    dto.queriedAt = new Date();
     return dto;
   }
 }

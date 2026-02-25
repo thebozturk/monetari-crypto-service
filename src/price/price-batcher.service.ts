@@ -90,7 +90,7 @@ export class PriceBatcherService implements OnModuleDestroy {
         this.logger.log(
           `Batch flushed for ${coinId}, served ${resolvers.length} requests`,
         );
-        resolvers.forEach((r) => r.resolve(price));
+        resolvers.forEach((r) => r.resolve({ data: price, fromCache: false }));
       })
       .catch((error) => {
         this.logger.error(`Batch failed for ${coinId}: ${error}`);

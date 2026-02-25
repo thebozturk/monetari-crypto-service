@@ -24,15 +24,20 @@ export class PriceService {
     const normalized = coinId.toLowerCase().trim();
 
     try {
-      const priceData = await this.priceBatcherService.getPrice(normalized);
+      const { data, fromCache } =
+        await this.priceBatcherService.getPrice(normalized);
+
+      if (fromCache) {
+        return PriceResponseDto.fromCoinGecko(normalized, data);
+      }
 
       const record = this.priceRecordRepository.create({
         coinId: normalized,
-        priceUsd: priceData.usd,
-        priceEur: priceData.eur ?? null,
-        priceTry: priceData.try ?? null,
-        marketCap: priceData.usd_market_cap ?? null,
-        change24h: priceData.usd_24h_change ?? null,
+        priceUsd: data.usd,
+        priceEur: data.eur ?? null,
+        priceTry: data.try ?? null,
+        marketCap: data.usd_market_cap ?? null,
+        change24h: data.usd_24h_change ?? null,
         queriedAt: new Date(),
       });
 

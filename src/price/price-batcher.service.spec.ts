@@ -56,7 +56,7 @@ describe('PriceBatcherService', () => {
 
     const result = await promise;
 
-    expect(result).toEqual(mockPrice);
+    expect(result).toEqual({ data: mockPrice, fromCache: false });
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledWith('bitcoin');
   });
@@ -70,8 +70,8 @@ describe('PriceBatcherService', () => {
 
     const [result1, result2] = await Promise.all([promise1, promise2]);
 
-    expect(result1).toEqual(mockPrice);
-    expect(result2).toEqual(mockPrice);
+    expect(result1).toEqual({ data: mockPrice, fromCache: false });
+    expect(result2).toEqual({ data: mockPrice, fromCache: false });
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
   });
 
@@ -89,9 +89,9 @@ describe('PriceBatcherService', () => {
       promise3,
     ]);
 
-    expect(result1).toEqual(mockPrice);
-    expect(result2).toEqual(mockPrice);
-    expect(result3).toEqual(mockPrice);
+    expect(result1).toEqual({ data: mockPrice, fromCache: false });
+    expect(result2).toEqual({ data: mockPrice, fromCache: false });
+    expect(result3).toEqual({ data: mockPrice, fromCache: false });
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
   });
 
@@ -116,8 +116,8 @@ describe('PriceBatcherService', () => {
 
     const [btcResult, ethResult] = await Promise.all([btcPromise, ethPromise]);
 
-    expect(btcResult).toEqual(mockPrice);
-    expect(ethResult).toEqual(ethPrice);
+    expect(btcResult).toEqual({ data: mockPrice, fromCache: false });
+    expect(ethResult).toEqual({ data: ethPrice, fromCache: false });
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(2);
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledWith('bitcoin');
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledWith('ethereum');
@@ -158,7 +158,7 @@ describe('PriceBatcherService', () => {
 
     const result = await p4;
 
-    expect(result).toEqual(mockPrice);
+    expect(result).toEqual({ data: mockPrice, fromCache: false });
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(2);
   });
 
@@ -174,7 +174,7 @@ describe('PriceBatcherService', () => {
     // second request within 5s should hit cache (no new API call)
     const result = await service.getPrice('bitcoin');
 
-    expect(result).toEqual(mockPrice);
+    expect(result).toEqual({ data: mockPrice, fromCache: true });
     expect(coinGeckoService.getSimplePrice).toHaveBeenCalledTimes(1);
   });
 });
