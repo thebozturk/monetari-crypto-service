@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PriceRecord } from './entities/price-record.entity';
 import { PriceBatcherService } from './price-batcher.service';
 import { PriceHistoryQueryDto } from './dto/price-history-query.dto';
+import { PriceResponseDto } from './dto/price-response.dto';
 
 @Injectable()
 export class PriceService {
@@ -13,7 +14,7 @@ export class PriceService {
     private readonly priceBatcherService: PriceBatcherService,
   ) {}
 
-  async getCurrentPrice(coinId: string): Promise<PriceRecord> {
+  async getCurrentPrice(coinId: string): Promise<PriceResponseDto> {
     const normalized = coinId.toLowerCase().trim();
     const priceData = await this.priceBatcherService.getPrice(normalized);
 
@@ -27,13 +28,14 @@ export class PriceService {
       queriedAt: new Date(),
     });
 
-    return this.priceRecordRepository.save(record);
+    const saved = await this.priceRecordRepository.save(record);
+    return PriceResponseDto.fromEntity(saved);
   }
 
   async getPriceHistory(
     coinId: string,
     query: PriceHistoryQueryDto,
-  ): Promise<PriceRecord[]> {
+  ): Promise<PriceResponseDto[]> {
     const normalized = coinId.toLowerCase().trim();
     const { from, to, limit = 100, offset = 0 } = query;
 
@@ -52,6 +54,7 @@ export class PriceService {
       qb.andWhere('pr.queriedAt <= :to', { to });
     }
 
-    return qb.getMany();
+    const records = await qb.getMany();
+    return records.map(PriceResponseDto.fromEntity);
   }
 }

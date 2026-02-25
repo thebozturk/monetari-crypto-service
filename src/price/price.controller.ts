@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { PriceService } from './price.service';
 import { PriceHistoryQueryDto } from './dto/price-history-query.dto';
+import { CoinIdValidationPipe } from '../common/pipes/coin-id-validation.pipe';
 
 @ApiTags('Price')
 @ApiBearerAuth()
@@ -40,7 +41,7 @@ export class PriceController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  getCurrentPrice(@Param('coinId') coinId: string) {
+  getCurrentPrice(@Param('coinId', CoinIdValidationPipe) coinId: string) {
     return this.priceService.getCurrentPrice(coinId);
   }
 
@@ -57,7 +58,7 @@ export class PriceController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   getPriceHistory(
-    @Param('coinId') coinId: string,
+    @Param('coinId', CoinIdValidationPipe) coinId: string,
     @Query() query: PriceHistoryQueryDto,
   ) {
     return this.priceService.getPriceHistory(coinId, query);
